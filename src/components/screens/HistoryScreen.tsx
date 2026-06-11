@@ -3,6 +3,7 @@ import type { Navigate } from '../../App';
 import type { GameEvent, Session } from '../../types';
 import { useStore } from '../../store/store';
 import { computeSessionTotals } from '../../lib/scoring';
+import { getEventParticipants } from '../../lib/players';
 import { formatDateTime, formatSigned, scoreColorClass } from '../../lib/format';
 import ScreenHeader from '../ui/ScreenHeader';
 import EventCard from '../events/EventCard';
@@ -135,7 +136,7 @@ export default function HistoryScreen({ navigate }: { navigate: Navigate }) {
       {editing && (
         <EventModalHost
           request={{ mode: 'edit', event: editing.event }}
-          players={editing.session.players}
+          players={getEventParticipants(editing.event, editing.session)}
           onClose={() => setEditing(null)}
           onSave={(event) =>
             dispatch({ type: 'EDIT_EVENT', sessionId: editing.session.id, event })

@@ -9,12 +9,27 @@
 export type ValueCardEventType = 'opening' | 'closing';
 export type GameEventType = ValueCardEventType | 'winner';
 
+/**
+ * A player's standing within an in-progress session.
+ *  - `active`  — included in scoring.
+ *  - `held`    — temporarily sitting out (e.g. took a call); excluded from new
+ *                events until resumed. Their accumulated score is preserved.
+ *  - `removed` — left the game; excluded from new events but their past score
+ *                stays on record.
+ *
+ * Absent/undefined is treated as `active` for backward compatibility with
+ * sessions saved before this field existed.
+ */
+export type PlayerStatus = 'active' | 'held' | 'removed';
+
 /** A player as they participate in a single session. */
 export interface SessionPlayer {
   /** Normalized identity key, e.g. "aaryan". */
   key: string;
   /** Preferred capitalization shown in the UI, e.g. "Aaryan". */
   displayName: string;
+  /** Standing in the session. Defaults to `active` when omitted. */
+  status?: PlayerStatus;
 }
 
 /**

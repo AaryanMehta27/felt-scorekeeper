@@ -6,7 +6,13 @@ import {
   useReducer,
 } from 'react';
 import type { Dispatch, ReactNode } from 'react';
-import type { AppState, GameEvent, Session, SessionPlayer } from '../types';
+import type {
+  AppState,
+  GameEvent,
+  PlayerStatus,
+  Session,
+  SessionPlayer,
+} from '../types';
 import { loadState, saveState } from '../lib/storage';
 import { newId } from '../lib/id';
 
@@ -16,6 +22,8 @@ type Action =
   | { type: 'ADD_EVENT'; event: GameEvent }
   | { type: 'UNDO_LAST' }
   | { type: 'EDIT_EVENT'; sessionId: string; event: GameEvent }
+  | { type: 'ADD_PLAYER'; key: string; displayName: string }
+  | { type: 'SET_PLAYER_STATUS'; key: string; status: PlayerStatus }
   | { type: 'RESET_ALL' };
 
 const nowIso = () => new Date().toISOString();
@@ -93,6 +101,41 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         activeSession: state.activeSession ? replaceIn(state.activeSession) : null,
         history: state.history.map(replaceIn),
+      };
+    }
+
+    case 'ADD_PLAYER': {
+      if (!state.activeSession) return state;
+      const roster = state.activeSession.players;
+      const exists = roster.some((p) => p.key === action.key);
+
+      // Re-adding a held/removed player reactivates them (and refreshes their
+      // preferred capitalization) rather than creating a duplicate.
+      const players: SessionPlayer[] = exists
+        ? roster.map((p) =>
+            p.key === action.key
+              ? { ...p, status: 'active', displayName: action.displayName }
+              : p,
+          )
+        : [...roster, { key: action.key, displayName: action.displayName, status: 'active' }];
+
+      return {
+        ...state,
+        activeSession: { ...state.activeSession, players },
+        registry: { ...state.registry, [action.key]: action.displayName },
+      };
+    }
+
+    case 'SET_PLAYER_STATUS': {
+      if (!state.activeSession) return state;
+      return {
+        ...state,
+        activeSession: {
+          ...state.activeSession,
+          players: state.activeSession.players.map((p) =>
+            p.key === action.key ? { ...p, status: action.status } : p,
+          ),
+        },
       };
     }
 

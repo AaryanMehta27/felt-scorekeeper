@@ -63,7 +63,7 @@ export default function NewSessionScreen({ navigate }: { navigate: Navigate }) {
         return;
       }
       seen.add(key);
-      players.push({ key, displayName: name });
+      players.push({ key, displayName: name, status: 'active' });
     }
 
     dispatch({ type: 'START_SESSION', players });

@@ -34,10 +34,12 @@ export default function HomeScreen({ navigate }: { navigate: Navigate }) {
           <span className="text-rose-400/90">♦</span>
           <span className="text-cream/80">♣</span>
         </div>
-        <h1 className="font-display text-6xl font-extrabold tracking-tight text-cream drop-shadow">
-          Felt
+        <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-cream drop-shadow sm:text-5xl">
+          Maha
+          <br />
+          Latthbandhan
         </h1>
-        <p className="mt-2 text-sm uppercase tracking-[0.28em] text-gold/80">
+        <p className="mt-3 text-xs uppercase tracking-[0.28em] text-gold/80 sm:text-sm">
           Card Table Scorekeeper
         </p>
       </div>

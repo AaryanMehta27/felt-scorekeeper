@@ -1,4 +1,4 @@
-# 🃏 Felt — Card Table Scorekeeper
+# 🃏 Maha Latthbandhan — Card Table Scorekeeper
 
 A premium, mobile-first companion app for tracking cumulative scores across
 sessions of a custom rummy-style card game (3–8 players). It runs **entirely in
