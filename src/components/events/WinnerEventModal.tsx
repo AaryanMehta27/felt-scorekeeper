@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import type { SessionPlayer, WinnerEvent } from '../../types';
-import { buildWinnerEvent, calcWinnerChanges } from '../../lib/scoring';
+import { buildWinnerEvent, calcWinnerChanges, sumChanges } from '../../lib/scoring';
 import { formatSigned, scoreColorClass } from '../../lib/format';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import NumberInput from '../ui/NumberInput';
+import TallyBadge from './TallyBadge';
 
 interface WinnerEventModalProps {
   players: SessionPlayer[];
@@ -49,8 +50,11 @@ export default function WinnerEventModal({
   );
 
   const winnerGain = changes[winnerKey] ?? 0;
+  const balance = sumChanges(changes);
+  const balanced = balance === 0;
 
   const handleSave = () => {
+    if (!balanced) return;
     onSave(
       buildWinnerEvent(
         winnerKey,
@@ -67,15 +71,18 @@ export default function WinnerEventModal({
       subtitle="Select the winner, then enter each loss"
       onClose={onClose}
       footer={
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleSave}
-          disabled={!winnerKey}
-        >
-          {initial ? 'Save Changes' : 'Lock In Scores'}
-        </Button>
+        <div className="space-y-3">
+          <TallyBadge balance={balance} />
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={handleSave}
+            disabled={!winnerKey || !balanced}
+          >
+            {initial ? 'Save Changes' : 'Lock In Scores'}
+          </Button>
+        </div>
       }
     >
       <div className="space-y-5">

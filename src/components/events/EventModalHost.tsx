@@ -38,6 +38,7 @@ export default function EventModalHost({
       <ValueCardEventModal
         type={request.kind}
         players={players}
+        withTalia={request.kind === 'opening'}
         onClose={onClose}
         onSave={handleSave}
       />
@@ -60,6 +61,7 @@ export default function EventModalHost({
     <ValueCardEventModal
       type={request.event.type}
       players={players}
+      withTalia={request.event.type === 'opening'}
       initial={request.event as ValueCardEvent}
       onClose={onClose}
       onSave={handleSave}

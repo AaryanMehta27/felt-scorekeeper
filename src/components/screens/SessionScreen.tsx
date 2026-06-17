@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import type { Navigate } from '../../App';
 import type { GameEvent, PlayerStatus, SessionPlayer } from '../../types';
 import { useStore } from '../../store/store';
-import { computeLeaderboard, computeSessionTotals } from '../../lib/scoring';
+import { computeLeaderboard, computeSessionTotals, sessionGrandTotal } from '../../lib/scoring';
 import { getActivePlayers, getEventParticipants, isActivePlayer, statusLabel } from '../../lib/players';
+import { getRoundState, PHASE_LABEL, PHASE_ORDER } from '../../lib/rounds';
 import { formatRelativeDay, formatSigned, scoreColorClass } from '../../lib/format';
 import ScreenHeader from '../ui/ScreenHeader';
 import Button from '../ui/Button';
@@ -51,7 +52,24 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
     (a, b) => (totals[b.key] ?? 0) - (totals[a.key] ?? 0),
   );
 
+  const round = getRoundState(session);
+  const nextIdx = PHASE_ORDER.indexOf(round.nextPhase);
+  const taliaName = round.taliaKey
+    ? session.players.find((p) => p.key === round.taliaKey)?.displayName ?? null
+    : null;
+
+  const grandTotal = sessionGrandTotal(session);
+  const tallies = grandTotal === 0;
+
   const canAddEvent = activePlayers.length >= 2;
+
+  const ctaLabel =
+    round.nextPhase === 'opening'
+      ? `Open Round ${round.roundNumber}`
+      : round.nextPhase === 'winner'
+        ? 'Winner Settlement'
+        : `Close Round ${round.roundNumber}`;
+  const ctaIcon = round.nextPhase === 'winner' ? '👑 ' : '';
 
   const eventsNewestFirst = session.events
     .map((event, index) => ({ event, index }))
@@ -93,6 +111,72 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
       />
 
       <div className="flex-1 space-y-6 overflow-y-auto pb-4 pt-2">
+        {/* Round flow */}
+        <section className="panel p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-lg font-bold text-cream">
+              Round {round.roundNumber}
+            </h2>
+            {taliaName ? (
+              <span className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-bold text-gold-light">
+                🃏 Talia · {taliaName}
+              </span>
+            ) : (
+              <span className="text-xs text-cream/40">Tag the talia at opening</span>
+            )}
+          </div>
+
+          {/* Phase progress */}
+          <div className="mb-4 flex items-center gap-1.5">
+            {PHASE_ORDER.map((phase, i) => {
+              const done = i < nextIdx;
+              const current = i === nextIdx;
+              return (
+                <div key={phase} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className={`h-1.5 w-full rounded-full ${
+                      done
+                        ? 'bg-emerald-400/70'
+                        : current
+                          ? 'bg-gold'
+                          : 'bg-white/10'
+                    }`}
+                  />
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      current
+                        ? 'text-gold-light'
+                        : done
+                          ? 'text-emerald-300/80'
+                          : 'text-cream/35'
+                    }`}
+                  >
+                    {done && '✓ '}
+                    {PHASE_LABEL[phase]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {!canAddEvent ? (
+            <p className="rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+              Add at least 2 active players to continue. Tap{' '}
+              <span className="font-semibold">Players</span> below.
+            </p>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => setModal({ mode: 'add', kind: round.nextPhase })}
+            >
+              {ctaIcon}
+              {ctaLabel}
+            </Button>
+          )}
+        </section>
+
         {/* Current session scores */}
         <section>
           <div className="mb-3 flex items-center justify-between">
@@ -108,13 +192,21 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
           <ul className="space-y-2">
             {rankedActive.map((p, i) => {
               const total = totals[p.key] ?? 0;
+              const isTalia = p.key === round.taliaKey;
               return (
                 <li key={p.key} className="panel flex items-center gap-3 px-4 py-3.5">
                   <span className="tnum w-6 text-center text-sm font-bold text-cream/40">
                     {i + 1}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-lg font-semibold text-cream">
-                    {p.displayName}
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate text-lg font-semibold text-cream">
+                      {p.displayName}
+                    </span>
+                    {isTalia && (
+                      <span className="shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-gold-light">
+                        🃏
+                      </span>
+                    )}
                   </span>
                   <span className={`tnum text-3xl font-extrabold ${scoreColorClass(total)}`}>
                     {formatSigned(total)}
@@ -135,7 +227,7 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
                     className="flex items-center gap-3 rounded-2xl border border-white/5 bg-black/10 px-4 py-3 opacity-70"
                   >
                     <span
-                      className={`w-auto rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                         p.status === 'held'
                           ? 'bg-amber-400/20 text-amber-200'
                           : 'bg-white/10 text-cream/50'
@@ -154,45 +246,25 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
               })}
             </ul>
           )}
-        </section>
 
-        {/* Add event */}
-        <section>
-          <h2 className="mb-3 font-display text-lg font-bold text-cream/90">Add Event</h2>
-          {!canAddEvent && (
-            <p className="mb-3 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-              Add at least 2 active players to record an event. Tap{' '}
-              <span className="font-semibold">Players</span> above to manage the table.
-            </p>
-          )}
-          <div className="space-y-2">
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={!canAddEvent}
-              onClick={() => setModal({ mode: 'add', kind: 'winner' })}
-            >
-              👑 Winner Settlement
-            </Button>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                size="lg"
-                disabled={!canAddEvent}
-                onClick={() => setModal({ mode: 'add', kind: 'opening' })}
-              >
-                Opening Cards
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                disabled={!canAddEvent}
-                onClick={() => setModal({ mode: 'add', kind: 'closing' })}
-              >
-                Closing Cards
-              </Button>
-            </div>
+          {/* Tally check — the grand total should always be 0. */}
+          <div
+            className={`mt-2 flex items-center justify-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${
+              tallies
+                ? 'text-emerald-300/80'
+                : 'border border-rose-400/30 bg-rose-500/10 text-rose-200'
+            }`}
+          >
+            {tallies ? (
+              <>
+                <span aria-hidden>✓</span> Tallies — all scores add to 0
+              </>
+            ) : (
+              <>
+                <span aria-hidden>⚠</span> Off by{' '}
+                <span className="tnum">{formatSigned(grandTotal)}</span>
+              </>
+            )}
           </div>
         </section>
 
@@ -245,7 +317,7 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
 
           {session.events.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-cream/50">
-              No events yet. Add the first hand above.
+              No events yet. Open the round above to begin.
             </div>
           ) : (
             <div className="space-y-2">

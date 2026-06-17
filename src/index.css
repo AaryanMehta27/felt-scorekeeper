@@ -60,8 +60,11 @@
 }
 
 @layer components {
+  /* No backdrop-blur here: this class repeats across every score row, and
+     blurring many elements forces costly repaints on phones (felt-by-frame
+     lag when totals update). A slightly more opaque fill keeps the depth. */
   .panel {
-    @apply rounded-4xl border border-white/10 bg-black/25 shadow-table backdrop-blur-sm;
+    @apply rounded-4xl border border-white/10 bg-black/30 shadow-table;
   }
 
   .hairline {

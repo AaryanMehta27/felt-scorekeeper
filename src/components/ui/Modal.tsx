@@ -41,7 +41,7 @@ export default function Modal({ title, subtitle, onClose, children, footer }: Mo
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-4xl border border-white/10 bg-felt-dark/95 shadow-table backdrop-blur-md animate-sheet-in sm:rounded-4xl"
+        className="relative z-10 flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-4xl border border-white/10 bg-felt-dark shadow-table animate-sheet-in sm:rounded-4xl"
       >
         <div className="shrink-0 px-6 pt-3">
           <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/15 sm:hidden" />

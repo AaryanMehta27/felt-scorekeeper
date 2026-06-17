@@ -42,6 +42,12 @@ export default function EventCard({ event, players, onEdit, index }: EventCardPr
               Winner · <span className="font-semibold text-cream">{nameOf(event.winnerKey)}</span>
             </p>
           )}
+          {event.type === 'opening' && event.taliaKey && (
+            <p className="mt-0.5 text-xs text-cream/60">
+              🃏 Talia ·{' '}
+              <span className="font-semibold text-gold-light">{nameOf(event.taliaKey)}</span>
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-xs text-cream/40">{formatTime(event.timestamp)}</span>

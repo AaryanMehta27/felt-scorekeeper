@@ -47,6 +47,12 @@ export interface ValueCardEvent {
   inputs: Record<string, number>;
   /** Calculated score change: player key -> delta. */
   changes: Record<string, number>;
+  /**
+   * The player tagged with the "talia" at the opening of the round. Set on the
+   * opening declaration; it holds for the whole round and clears once the round
+   * is closed. Only meaningful on `opening` events.
+   */
+  taliaKey?: string;
 }
 
 /**

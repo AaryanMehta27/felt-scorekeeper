@@ -75,14 +75,32 @@ export function buildValueCardEvent(
   inputs: Record<string, number>,
   playerKeys: string[],
   base?: Pick<ValueCardEvent, 'id' | 'timestamp'>,
+  taliaKey?: string,
 ): ValueCardEvent {
-  return {
+  const event: ValueCardEvent = {
     id: base?.id ?? newId(),
     type,
     timestamp: base?.timestamp ?? new Date().toISOString(),
     inputs: { ...inputs },
     changes: calcValueCardChanges(inputs, playerKeys),
   };
+  if (taliaKey) event.taliaKey = taliaKey;
+  return event;
+}
+
+/** Sum of an event's score changes — should always be exactly 0 (zero-sum). */
+export function sumChanges(changes: Record<string, number>): number {
+  return Object.values(changes).reduce((total, n) => total + n, 0);
+}
+
+/** True when an event's changes balance to zero. */
+export function isBalanced(changes: Record<string, number>): boolean {
+  return sumChanges(changes) === 0;
+}
+
+/** Grand total of every player's running score — should always be 0. */
+export function sessionGrandTotal(session: Session): number {
+  return sumChanges(computeSessionTotals(session));
 }
 
 /** Build a fully-calculated winner event (used for new events and edits). */
