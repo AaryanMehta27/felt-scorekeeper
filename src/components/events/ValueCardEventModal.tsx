@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { SessionPlayer, ValueCardEvent, ValueCardEventType } from '../../types';
 import { buildValueCardEvent, calcValueCardChanges, sumChanges } from '../../lib/scoring';
+import { getEventTalia, taliaCount } from '../../lib/rounds';
 import { formatSigned, scoreColorClass } from '../../lib/format';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -39,7 +40,17 @@ export default function ValueCardEventModal({
     }
     return init;
   });
-  const [taliaKey, setTaliaKey] = useState<string | null>(initial?.taliaKey ?? null);
+  const [talia, setTalia] = useState<Record<string, number>>(() =>
+    initial ? { ...getEventTalia(initial) } : {},
+  );
+  const bumpTalia = (key: string, delta: number) =>
+    setTalia((s) => {
+      const next = Math.max(0, (s[key] ?? 0) + delta);
+      const out = { ...s };
+      if (next === 0) delete out[key];
+      else out[key] = next;
+      return out;
+    });
 
   const keys = useMemo(() => players.map((p) => p.key), [players]);
 
@@ -68,7 +79,7 @@ export default function ValueCardEventModal({
         numericInputs,
         keys,
         initial ? { id: initial.id, timestamp: initial.timestamp } : undefined,
-        withTalia && taliaKey ? taliaKey : undefined,
+        withTalia ? talia : undefined,
       ),
     );
   };
@@ -97,26 +108,60 @@ export default function ValueCardEventModal({
         {withTalia && (
           <div className="rounded-2xl border border-gold/25 bg-gold/[0.07] p-3">
             <p className="mb-2 text-sm font-semibold text-gold-light">
-              🃏 Talia <span className="font-normal text-cream/50">(holds for the round)</span>
+              🃏 Talia{' '}
+              <span className="font-normal text-cream/50">
+                (holds for the round · multiple allowed)
+              </span>
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-1.5">
               {players.map((p) => {
-                const selected = p.key === taliaKey;
+                const count = talia[p.key] ?? 0;
+                const has = count > 0;
                 return (
-                  <button
+                  <div
                     key={p.key}
-                    onClick={() => setTaliaKey(selected ? null : p.key)}
-                    className={`min-h-[2.5rem] rounded-xl border px-3 text-sm font-semibold transition-colors touch-manipulation ${
-                      selected
-                        ? 'border-gold-light/60 bg-gradient-to-b from-gold-light to-gold text-felt-deep'
-                        : 'border-white/12 bg-white/5 text-cream/80 hover:bg-white/10'
+                    className={`flex items-center gap-3 rounded-xl px-2 py-1.5 ${
+                      has ? 'bg-gold/10' : ''
                     }`}
                   >
-                    {p.displayName}
-                  </button>
+                    <span
+                      className={`min-w-0 flex-1 truncate text-sm font-semibold ${
+                        has ? 'text-gold-light' : 'text-cream/80'
+                      }`}
+                    >
+                      {p.displayName}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={`Remove talia from ${p.displayName}`}
+                        onClick={() => bumpTalia(p.key, -1)}
+                        disabled={!has}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xl font-bold text-cream/80 transition-transform active:scale-90 disabled:opacity-30 touch-manipulation"
+                      >
+                        −
+                      </button>
+                      <span className="tnum w-6 text-center text-base font-bold text-cream">
+                        {count}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Add talia to ${p.displayName}`}
+                        onClick={() => bumpTalia(p.key, 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-gold/30 bg-gold/15 text-xl font-bold text-gold-light transition-transform active:scale-90 touch-manipulation"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
+            {taliaCount(talia) > 0 && (
+              <p className="mt-2 text-xs text-cream/50">
+                {taliaCount(talia)} talia tagged
+              </p>
+            )}
           </div>
         )}
 

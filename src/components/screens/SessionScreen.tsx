@@ -4,7 +4,7 @@ import type { GameEvent, PlayerStatus, SessionPlayer } from '../../types';
 import { useStore } from '../../store/store';
 import { computeLeaderboard, computeSessionTotals, sessionGrandTotal } from '../../lib/scoring';
 import { getActivePlayers, getEventParticipants, isActivePlayer, statusLabel } from '../../lib/players';
-import { getRoundState, PHASE_LABEL, PHASE_ORDER } from '../../lib/rounds';
+import { getRoundState, PHASE_LABEL, PHASE_ORDER, taliaCount, taliaSummary } from '../../lib/rounds';
 import { formatRelativeDay, formatSigned, scoreColorClass } from '../../lib/format';
 import ScreenHeader from '../ui/ScreenHeader';
 import Button from '../ui/Button';
@@ -54,9 +54,8 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
 
   const round = getRoundState(session);
   const nextIdx = PHASE_ORDER.indexOf(round.nextPhase);
-  const taliaName = round.taliaKey
-    ? session.players.find((p) => p.key === round.taliaKey)?.displayName ?? null
-    : null;
+  const hasTalia = taliaCount(round.talia) > 0;
+  const taliaText = hasTalia ? taliaSummary(round.talia, session.players) : null;
 
   const grandTotal = sessionGrandTotal(session);
   const tallies = grandTotal === 0;
@@ -117,9 +116,9 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
             <h2 className="font-display text-lg font-bold text-cream">
               Round {round.roundNumber}
             </h2>
-            {taliaName ? (
-              <span className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-bold text-gold-light">
-                🃏 Talia · {taliaName}
+            {taliaText ? (
+              <span className="max-w-[60%] truncate rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-bold text-gold-light">
+                🃏 {taliaText}
               </span>
             ) : (
               <span className="text-xs text-cream/40">Tag the talia at opening</span>
@@ -192,7 +191,7 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
           <ul className="space-y-2">
             {rankedActive.map((p, i) => {
               const total = totals[p.key] ?? 0;
-              const isTalia = p.key === round.taliaKey;
+              const taliaN = round.talia[p.key] ?? 0;
               return (
                 <li key={p.key} className="panel flex items-center gap-3 px-4 py-3.5">
                   <span className="tnum w-6 text-center text-sm font-bold text-cream/40">
@@ -202,9 +201,9 @@ export default function SessionScreen({ navigate }: { navigate: Navigate }) {
                     <span className="truncate text-lg font-semibold text-cream">
                       {p.displayName}
                     </span>
-                    {isTalia && (
+                    {taliaN > 0 && (
                       <span className="shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-gold-light">
-                        🃏
+                        🃏{taliaN > 1 ? `×${taliaN}` : ''}
                       </span>
                     )}
                   </span>

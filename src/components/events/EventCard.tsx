@@ -1,5 +1,6 @@
 import type { GameEvent, SessionPlayer } from '../../types';
 import { eventTypeLabel } from '../../lib/scoring';
+import { getEventTalia, taliaCount, taliaSummary } from '../../lib/rounds';
 import { formatSigned, formatTime, scoreColorClass } from '../../lib/format';
 
 interface EventCardProps {
@@ -42,10 +43,12 @@ export default function EventCard({ event, players, onEdit, index }: EventCardPr
               Winner · <span className="font-semibold text-cream">{nameOf(event.winnerKey)}</span>
             </p>
           )}
-          {event.type === 'opening' && event.taliaKey && (
+          {event.type === 'opening' && taliaCount(getEventTalia(event)) > 0 && (
             <p className="mt-0.5 text-xs text-cream/60">
               🃏 Talia ·{' '}
-              <span className="font-semibold text-gold-light">{nameOf(event.taliaKey)}</span>
+              <span className="font-semibold text-gold-light">
+                {taliaSummary(getEventTalia(event), players)}
+              </span>
             </p>
           )}
         </div>

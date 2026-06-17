@@ -48,9 +48,15 @@ export interface ValueCardEvent {
   /** Calculated score change: player key -> delta. */
   changes: Record<string, number>;
   /**
-   * The player tagged with the "talia" at the opening of the round. Set on the
-   * opening declaration; it holds for the whole round and clears once the round
-   * is closed. Only meaningful on `opening` events.
+   * Talia held per player, tagged at the opening of the round: player key ->
+   * count. Multiple players can hold the talia and a player can hold more than
+   * one. It holds for the whole round and clears once the round is closed.
+   * Only meaningful on `opening` events.
+   */
+  talia?: Record<string, number>;
+  /**
+   * @deprecated Single-holder talia from before multi-talia support. Read via
+   * `getEventTalia` for backward compatibility; no longer written.
    */
   taliaKey?: string;
 }

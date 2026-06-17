@@ -75,7 +75,7 @@ export function buildValueCardEvent(
   inputs: Record<string, number>,
   playerKeys: string[],
   base?: Pick<ValueCardEvent, 'id' | 'timestamp'>,
-  taliaKey?: string,
+  talia?: Record<string, number>,
 ): ValueCardEvent {
   const event: ValueCardEvent = {
     id: base?.id ?? newId(),
@@ -84,7 +84,14 @@ export function buildValueCardEvent(
     inputs: { ...inputs },
     changes: calcValueCardChanges(inputs, playerKeys),
   };
-  if (taliaKey) event.taliaKey = taliaKey;
+  // Keep only positive counts so the map stays clean.
+  if (talia) {
+    const cleaned: Record<string, number> = {};
+    for (const [key, n] of Object.entries(talia)) {
+      if (n > 0) cleaned[key] = n;
+    }
+    if (Object.keys(cleaned).length > 0) event.talia = cleaned;
+  }
   return event;
 }
 
